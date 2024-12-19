@@ -1,0 +1,180 @@
+import React, { useState, useRef } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Settings, Printer, Eye, Image } from 'lucide-react';
+
+const PriceTagGenerator = () => {
+  const [tagsPerPage, setTagsPerPage] = useState('8');
+  const [font, setFont] = useState('Arial');
+  const [fontSize, setFontSize] = useState('24'); // הגדלת ברירת המחדל
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [logo, setLogo] = useState(null);
+  const fileInputRef = useRef(null);
+  const logoInputRef = useRef(null);
+  
+  // Sample data structure from Excel
+  const sampleData = [
+    { barcode: '7290000000001', name: 'חלב תנובה 3%', price: '6.90', salePrice: '' },
+    { barcode: '7290000000002', name: 'לחם אחיד', price: '7.50', salePrice: '5.90' },
+    { barcode: '7290000000003', name: 'קורנפלקס תלמה', price: '24.90', salePrice: '19.90' },
+    { barcode: '7290000000004', name: 'שוקולד פרה', price: '8.90', salePrice: '' },
+  ];
+
+  const handleLogoUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => setLogo(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const renderPriceTag = (item) => {
+    const tagStyle = {
+      border: '1px solid #ccc',
+      padding: '0.5rem',
+      margin: '0.25rem',
+      width: tagsPerPage === '8' ? 'calc(25% - 1rem)' : 'calc(25% - 1rem)',
+      height: tagsPerPage === '8' ? '250px' : '180px', // הגדלת הגובה
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      fontFamily: font,
+      direction: 'rtl'
+    };
+
+    return (
+      <div key={item.barcode} className="bg-white rounded shadow" style={tagStyle}>
+        {logo && (
+          <div className="w-16 h-8 mb-2">
+            <img src={logo} alt="לוגו" className="w-full h-full object-contain" />
+          </div>
+        )}
+        
+        <div className="text-center font-bold mb-2" 
+             style={{ 
+               fontSize: `${parseInt(fontSize)}px`,
+               lineHeight: '1.2',
+               maxHeight: '2.4em',
+               overflow: 'hidden'
+             }}>
+          {item.name}
+        </div>
+        
+        <div className="flex-grow flex items-center">
+          {item.salePrice ? (
+            <div className="text-center">
+              <div className="line-through text-gray-500 text-lg">{item.price} ₪</div>
+              <div className="text-red-600 font-bold text-3xl">{item.salePrice} ₪</div>
+            </div>
+          ) : (
+            <div className="text-3xl font-bold">{item.price} ₪</div>
+          )}
+        </div>
+        
+        <div className="text-sm text-gray-600 mt-2">{item.barcode}</div>
+      </div>
+    );
+  };
+
+  return (
+    <Card className="w-full max-w-4xl">
+      <CardHeader>
+        <CardTitle className="text-center text-2xl mb-4">המכירה של צבי</CardTitle>
+        <div className="flex gap-4 justify-center flex-wrap">
+          <Button 
+            onClick={() => setIsPreviewMode(!isPreviewMode)}
+            className="flex items-center gap-2"
+          >
+            <Eye className="w-4 h-4" />
+            {isPreviewMode ? 'חזור להגדרות' : 'תצוגה מקדימה'}
+          </Button>
+
+          <Button 
+            onClick={() => logoInputRef.current?.click()}
+            className="flex items-center gap-2"
+          >
+            <Image className="w-4 h-4" />
+            העלאת לוגו
+          </Button>
+          
+          <input
+            type="file"
+            ref={logoInputRef}
+            accept="image/*"
+            className="hidden"
+            onChange={handleLogoUpload}
+          />
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        {!isPreviewMode && (
+          <div className="mb-6 flex gap-4 flex-wrap">
+            <Select value={tagsPerPage} onValueChange={setTagsPerPage}>
+              <SelectTrigger>
+                <SelectValue placeholder="תגים בעמוד" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="8">8 תגים בעמוד</SelectItem>
+                <SelectItem value="16">16 תגים בעמוד</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={font} onValueChange={setFont}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר גופן" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Arial">Arial</SelectItem>
+                <SelectItem value="David">David</SelectItem>
+                <SelectItem value="Helvetica">Helvetica</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Input
+              type="number"
+              value={fontSize}
+              onChange={(e) => setFontSize(e.target.value)}
+              placeholder="גודל גופן"
+              className="w-24"
+            />
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(e) => console.log('File selected:', e.target.files[0])}
+            />
+
+            <Button 
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              טען קובץ אקסל
+            </Button>
+
+            <Button className="flex items-center gap-2">
+              <Printer className="w-4 h-4" />
+              הדפס
+            </Button>
+          </div>
+        )}
+
+        <div className={`flex flex-wrap gap-2 ${isPreviewMode ? 'bg-gray-100 p-4' : ''}`}>
+          {sampleData.map(renderPriceTag)}
+        </div>
+
+        <div className="text-center text-sm text-gray-500 mt-6">
+          מגדנות פיתוח 077-2269702
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default PriceTagGenerator;
